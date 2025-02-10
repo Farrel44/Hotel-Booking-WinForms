@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace HotelBookingApp
 {
     public partial class ReservationPage : Form
@@ -27,7 +28,26 @@ namespace HotelBookingApp
         {
             ShowReservations();
             ShowAvailableRooms();
+            ShowGuests();
+            PopulatePaymentMethods();
+            PopulateStatusReservation();
         }
+
+        private void PopulatePaymentMethods()
+        {
+            cmbPaymentMethod.Items.Add("cash");
+            cmbPaymentMethod.Items.Add("credit_card");
+            cmbPaymentMethod.Items.Add("debit_card");
+            cmbPaymentMethod.Items.Add("bank_transfer");
+        }
+
+        private void PopulateStatusReservation()
+        {
+            cmbStatus.Items.Add("checked_in");
+            cmbStatus.Items.Add("checked_out");
+        }
+
+
 
         void ShowReservations()
         {
@@ -38,9 +58,9 @@ namespace HotelBookingApp
                 ds = new DataSet();
                 da = new SqlDataAdapter(cmd);
                 da.Fill(ds, "reservations");
-                dataGridView1.DataSource = ds;
-                dataGridView1.DataMember = "reservations";
-                dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+                dataGridViewReservations.DataSource = ds;
+                dataGridViewReservations.DataMember = "reservations";
+                dataGridViewReservations.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             }
         }
 
@@ -49,106 +69,115 @@ namespace HotelBookingApp
             using (SqlConnection conn = connection.GetConn())
             {
                 conn.Open();
-                cmd = new SqlCommand("SELECT room_id, room_number FROM rooms WHERE status = 'available'", conn);
+                cmd = new SqlCommand("SELECT room_id, room_number, price FROM rooms WHERE status = 'available'", conn);
                 ds = new DataSet();
                 da = new SqlDataAdapter(cmd);
                 da.Fill(ds, "available_rooms");
-                dataGridView2.DataSource = ds;
-                dataGridView2.DataMember = "available_rooms";
-                dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+                dataGridViewRooms.DataSource = ds;
+                dataGridViewRooms.DataMember = "available_rooms";
+                dataGridViewRooms.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             }
         }
 
-        private void btn_book_Click(object sender, EventArgs e)
+        void ShowGuests()
+        {
+            using (SqlConnection conn = connection.GetConn())
+            {
+                conn.Open();
+                cmd = new SqlCommand("SELECT guest_id, full_name FROM guests", conn);
+                ds = new DataSet();
+                da = new SqlDataAdapter(cmd);
+                da.Fill(ds, "guests");
+                dataGridViewGuests.DataSource = ds;
+                dataGridViewGuests.DataMember = "guests";
+                dataGridViewGuests.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            }
+        }
+
+        private void btn_book_Click_1(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txt_guestId.Text) || string.IsNullOrWhiteSpace(txt_roomId.Text))
             {
                 MessageBox.Show("Please select a guest and a room.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            if (dtpCheckIn.Value.Date < DateTime.Today)
-            {
-                MessageBox.Show("Check-in date cannot be before today.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            if (dtpCheckOut.Value.Date <= dtpCheckIn.Value.Date)
-            {
-                MessageBox.Show("Check-out date must be after check-in date.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
 
             using (SqlConnection conn = connection.GetConn())
             {
                 conn.Open();
-                cmd = new SqlCommand("INSERT INTO reservations (guest_id, room_id, check_in_date, check_out_date) VALUES (@guest_id, @room_id, @check_in_date, @check_out_date)", conn);
-                cmd.Parameters.AddWithValue("@guest_id", txt_guestId.Text);
-                cmd.Parameters.AddWithValue("@room_id", txt_roomId.Text);
-                cmd.Parameters.AddWithValue("@check_in_date", dtpCheckIn.Value);
-                cmd.Parameters.AddWithValue("@check_out_date", dtpCheckOut.Value);
-                cmd.ExecuteNonQuery();
+                SqlTransaction transaction = conn.BeginTransaction();
+
+                try
+                {
+                    cmd = new SqlCommand("INSERT INTO reservations (guest_id, room_id, check_in_date, check_out_date) VALUES (@guest_id, @room_id, @check_in_date, @check_out_date)", conn, transaction);
+                    cmd.Parameters.AddWithValue("@guest_id", txt_guestId.Text);
+                    cmd.Parameters.AddWithValue("@room_id", txt_roomId.Text);
+                    cmd.Parameters.AddWithValue("@check_in_date", dtpCheckIn.Value);
+                    cmd.Parameters.AddWithValue("@check_out_date", dtpCheckOut.Value);
+                    cmd.ExecuteNonQuery();
+
+                    cmd = new SqlCommand("UPDATE rooms SET status = 'occupied' WHERE room_id = @room_id", conn, transaction);
+                    cmd.Parameters.AddWithValue("@room_id", txt_roomId.Text);
+                    cmd.ExecuteNonQuery();
+
+                    transaction.Commit();
+                    MessageBox.Show("Room successfully booked!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("An error occurred while booking the room.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             ShowReservations();
             ShowAvailableRooms();
         }
 
-        private void btn_checkIn_Click(object sender, EventArgs e)
+        private void btn_processPayment_Click_1(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txt_reservationId.Text))
+            if (string.IsNullOrWhiteSpace(txt_reservationId.Text) || string.IsNullOrWhiteSpace(txt_amount.Text) || cmbPaymentMethod.SelectedItem == null)
             {
-                MessageBox.Show("Please select a reservation.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please provide complete payment details.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
             using (SqlConnection conn = connection.GetConn())
             {
                 conn.Open();
-                cmd = new SqlCommand("UPDATE reservations SET status = 'checked_in' WHERE reservation_id = @reservation_id AND status = 'confirmed'", conn);
-                cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
-                int rowsAffected = cmd.ExecuteNonQuery();
-                if (rowsAffected == 0)
+                SqlTransaction transaction = conn.BeginTransaction();
+
+                try
                 {
-                    MessageBox.Show("Reservation must be confirmed before check-in.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    cmd = new SqlCommand("INSERT INTO payments (reservation_id, amount, payment_method, payment_status) VALUES (@reservation_id, @amount, @payment_method, 'paid')", conn, transaction);
+                    cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
+                    cmd.Parameters.AddWithValue("@amount", decimal.Parse(txt_amount.Text));
+                    cmd.Parameters.AddWithValue("@payment_method", cmbPaymentMethod.SelectedItem.ToString());
+                    cmd.ExecuteNonQuery();
+
+                    cmd = new SqlCommand("UPDATE reservations SET status = 'confirmed' WHERE reservation_id = @reservation_id", conn, transaction);
+                    cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
+                    cmd.ExecuteNonQuery();
+
+                    transaction.Commit();
+                    MessageBox.Show("Payment processed successfully and reservation confirmed!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("An error occurred while processing the payment.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             ShowReservations();
         }
 
-        private void btn_checkOut_Click(object sender, EventArgs e)
+        private void btn_cancelReservation_Click_1(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txt_reservationId.Text))
             {
-                MessageBox.Show("Please select a reservation.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select a reservation to cancel.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            if (string.IsNullOrWhiteSpace(txt_amount.Text) || !decimal.TryParse(txt_amount.Text, out decimal amount) || amount <= 0)
-            {
-                MessageBox.Show("Please enter a valid payment amount.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            using (SqlConnection conn = connection.GetConn())
-            {
-                conn.Open();
-                cmd = new SqlCommand("UPDATE reservations SET status = 'checked_out' WHERE reservation_id = @reservation_id AND status = 'checked_in'", conn);
-                cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
-                int rowsAffected = cmd.ExecuteNonQuery();
-                if (rowsAffected == 0)
-                {
-                    MessageBox.Show("Only checked-in reservations can be checked out.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
 
-                cmd = new SqlCommand("INSERT INTO payments (reservation_id, amount, payment_method, payment_status) VALUES (@reservation_id, @amount, @payment_method, 'paid')", conn);
-                cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
-                cmd.Parameters.AddWithValue("@amount", amount);
-                cmd.Parameters.AddWithValue("@payment_method", cmbPaymentMethod.SelectedItem.ToString());
-                cmd.ExecuteNonQuery();
-            }
-            ShowReservations();
-            ShowAvailableRooms();
-        }
-
-        private void btn_cancelReservation_Click(object sender, EventArgs e)
-        {
             using (SqlConnection conn = connection.GetConn())
             {
                 conn.Open();
@@ -156,31 +185,112 @@ namespace HotelBookingApp
                 cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
                 cmd.ExecuteNonQuery();
             }
+            MessageBox.Show("Reservation canceled successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             ShowReservations();
             ShowAvailableRooms();
         }
 
-        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void dataGridViewReservations_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
             {
-                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                DataGridViewRow row = dataGridViewReservations.Rows[e.RowIndex];
                 txt_reservationId.Text = row.Cells["reservation_id"].Value.ToString();
                 txt_guestId.Text = row.Cells["full_name"].Value.ToString();
                 txt_roomId.Text = row.Cells["room_number"].Value.ToString();
                 dtpCheckIn.Value = Convert.ToDateTime(row.Cells["check_in_date"].Value);
                 dtpCheckOut.Value = Convert.ToDateTime(row.Cells["check_out_date"].Value);
-                cmbStatus.SelectedItem = row.Cells["status"].Value.ToString();
             }
         }
 
-        private void dataGridView2_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void dataGridViewRooms_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
             {
-                DataGridViewRow row = dataGridView2.Rows[e.RowIndex];
+                DataGridViewRow row = dataGridViewRooms.Rows[e.RowIndex];
                 txt_roomId.Text = row.Cells["room_id"].Value.ToString();
             }
+        }
+
+        private void dataGridViewGuests_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = dataGridViewGuests.Rows[e.RowIndex];
+                txt_guestId.Text = row.Cells["guest_id"].Value.ToString();
+            }
+        }
+
+        private void dataGridViewRooms_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = dataGridViewRooms.Rows[e.RowIndex];
+                txt_roomId.Text = row.Cells["room_id"].Value.ToString();
+                txt_amount.Text = row.Cells["price"].Value.ToString();
+            }
+        }
+
+        private void dataGridViewGuests_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = dataGridViewGuests.Rows[e.RowIndex];
+                txt_guestId.Text = row.Cells["guest_id"].Value.ToString();
+            }
+        }
+
+        private void dataGridViewReservations_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = dataGridViewReservations.Rows[e.RowIndex];
+                txt_reservationId.Text = row.Cells["reservation_id"].Value.ToString();
+                txt_guestId.Text = row.Cells["full_name"].Value.ToString();
+                txt_roomId.Text = row.Cells["room_number"].Value.ToString();
+                dtpCheckIn.Value = Convert.ToDateTime(row.Cells["check_in_date"].Value);
+                dtpCheckOut.Value = Convert.ToDateTime(row.Cells["check_out_date"].Value);
+            }
+        }
+
+        private void btn_updateStatus_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txt_reservationId.Text) || cmbStatus.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a reservation and status.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (SqlConnection conn = connection.GetConn())
+            {
+                conn.Open();
+                SqlTransaction transaction = conn.BeginTransaction();
+
+                try
+                {
+                    cmd = new SqlCommand("UPDATE reservations SET status = @status WHERE reservation_id = @reservation_id", conn, transaction);
+                    cmd.Parameters.AddWithValue("@status", cmbStatus.SelectedItem.ToString());
+                    cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
+                    cmd.ExecuteNonQuery();
+
+                    if (cmbStatus.SelectedItem.ToString() == "check-out")
+                    {
+                        cmd = new SqlCommand("UPDATE rooms SET status = 'maintenance' WHERE room_number = (SELECT rm.room_number FROM reservations r JOIN rooms rm ON r.room_id = rm.room_id WHERE r.reservation_id = @reservation_id)", conn, transaction);
+                        cmd.Parameters.AddWithValue("@reservation_id", txt_reservationId.Text);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                    MessageBox.Show("Reservation status updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("An error occurred while updating the reservation status.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            ShowReservations();
+            ShowAvailableRooms();
         }
     }
 }

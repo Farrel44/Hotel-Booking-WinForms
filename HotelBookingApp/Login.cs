@@ -17,9 +17,12 @@ namespace HotelBookingApp
         private SqlDataAdapter da;
         private SqlDataReader dr;
         private DataSet ds;
+        private string userRole;
 
         Connection connection = new Connection();
         Encrypt encryption = new Encrypt();
+
+        public string UserRole => userRole;
         public Login()
         {
             InitializeComponent();
@@ -47,12 +50,12 @@ namespace HotelBookingApp
             string username = txt_username.Text;
             string password = txt_password.Text;
 
-            if (AuthenticateUser(username, password))
+            if (AuthenticateUser(username, password, out userRole))
             {
                 MessageBox.Show("Login Berhasil!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                Home home = new Home();
+
+                Home home = new Home(userRole);
                 this.Hide();
-                home.ShowDialog();
                 this.Close();
             }
             else
@@ -61,10 +64,11 @@ namespace HotelBookingApp
             }
         }
 
-        private bool AuthenticateUser(string username, string password)
+        private bool AuthenticateUser(string username, string password, out string role)
         {
+            role = null;
             string hashedPassword = encryption.PashHash(password);
-            string query = "SELECT COUNT(*) FROM users WHERE username = @username AND password_hash = @password";
+            string query = "SELECT role FROM users WHERE username = @username AND password_hash = @password";
 
             using (SqlConnection conn = connection.GetConn())
             {
@@ -74,10 +78,17 @@ namespace HotelBookingApp
                     cmd.Parameters.AddWithValue("@username", username);
                     cmd.Parameters.AddWithValue("@password", hashedPassword);
 
-                    int userCount = (int)cmd.ExecuteScalar();
-                    return userCount > 0;
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            role = dr["role"].ToString();
+                            return true;
+                        }
+                    }
                 }
             }
+            return false;
         }
     }
 }
