@@ -29,6 +29,7 @@
             dtpEndDate = new DateTimePicker();
             lblStartDate = new Label();
             lblEndDate = new Label();
+            sqlCommand1 = new Microsoft.Data.SqlClient.SqlCommand();
             ((System.ComponentModel.ISupportInitialize)dataGridViewPayments).BeginInit();
             SuspendLayout();
             // 
@@ -92,10 +93,16 @@
             lblEndDate.TabIndex = 6;
             lblEndDate.Text = "End Date";
             // 
+            // sqlCommand1
+            // 
+            sqlCommand1.CommandTimeout = 30;
+            sqlCommand1.EnableOptimizedParameterBinding = false;
+            // 
             // ReportPage
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            AutoSize = true;
             ClientSize = new Size(831, 377);
             Controls.Add(lblEndDate);
             Controls.Add(lblStartDate);
@@ -104,6 +111,7 @@
             Controls.Add(btnExport);
             Controls.Add(btnFilter);
             Controls.Add(dataGridViewPayments);
+            MaximizeBox = false;
             Name = "ReportPage";
             Text = "Payment Report";
             Load += ReportPage_Load;
@@ -111,5 +119,7 @@
             ResumeLayout(false);
             PerformLayout();
         }
+
+        private Microsoft.Data.SqlClient.SqlCommand sqlCommand1;
     }
 }

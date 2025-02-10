@@ -30,18 +30,18 @@ namespace HotelBookingApp
 
         private void Login_Load(object sender, EventArgs e)
         {
-
+            check_pass.Checked = true;
         }
 
         private void check_pass_CheckedChanged(object sender, EventArgs e)
         {
             if (check_pass.Checked)
             {
-                txt_password.UseSystemPasswordChar = false;
+                txt_password.UseSystemPasswordChar = true;
             }
             else
             {
-                txt_password.UseSystemPasswordChar = true;
+                txt_password.UseSystemPasswordChar = false;
             }
         }
 

@@ -43,6 +43,7 @@
             // 
             // lbl_Welcome
             // 
+            lbl_Welcome.Anchor = AnchorStyles.None;
             lbl_Welcome.AutoSize = true;
             lbl_Welcome.Font = new Font("Segoe UI", 24F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lbl_Welcome.Location = new Point(36, 9);
@@ -54,6 +55,7 @@
             // 
             // btn_Login
             // 
+            btn_Login.Anchor = AnchorStyles.None;
             btn_Login.Font = new Font("Segoe UI", 18F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btn_Login.Location = new Point(320, 152);
             btn_Login.Name = "btn_Login";
@@ -65,6 +67,7 @@
             // 
             // btn_userpage
             // 
+            btn_userpage.Anchor = AnchorStyles.None;
             btn_userpage.Font = new Font("Segoe UI", 18F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btn_userpage.Location = new Point(78, 83);
             btn_userpage.Name = "btn_userpage";
@@ -76,6 +79,7 @@
             // 
             // btn_roompage
             // 
+            btn_roompage.Anchor = AnchorStyles.None;
             btn_roompage.Font = new Font("Segoe UI", 18F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btn_roompage.Location = new Point(305, 83);
             btn_roompage.Name = "btn_roompage";
@@ -87,6 +91,7 @@
             // 
             // btn_guestpage
             // 
+            btn_guestpage.Anchor = AnchorStyles.None;
             btn_guestpage.Font = new Font("Segoe UI", 18F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btn_guestpage.Location = new Point(530, 83);
             btn_guestpage.Name = "btn_guestpage";
@@ -98,6 +103,7 @@
             // 
             // btn_reservation
             // 
+            btn_reservation.Anchor = AnchorStyles.None;
             btn_reservation.Font = new Font("Segoe UI", 18F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btn_reservation.Location = new Point(195, 208);
             btn_reservation.Name = "btn_reservation";
@@ -109,6 +115,7 @@
             // 
             // btn_report
             // 
+            btn_report.Anchor = AnchorStyles.None;
             btn_report.Font = new Font("Segoe UI", 18F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btn_report.Location = new Point(409, 208);
             btn_report.Name = "btn_report";
@@ -120,6 +127,7 @@
             // 
             // lbl_WelcomeRole
             // 
+            lbl_WelcomeRole.Anchor = AnchorStyles.None;
             lbl_WelcomeRole.AutoSize = true;
             lbl_WelcomeRole.Font = new Font("Segoe UI Semibold", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lbl_WelcomeRole.Location = new Point(11, 9);
@@ -130,6 +138,7 @@
             // 
             // lbl_credit
             // 
+            lbl_credit.Anchor = AnchorStyles.None;
             lbl_credit.AutoSize = true;
             lbl_credit.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             lbl_credit.Location = new Point(12, 338);
@@ -140,6 +149,7 @@
             // 
             // btn_out
             // 
+            btn_out.Anchor = AnchorStyles.None;
             btn_out.BackColor = Color.Red;
             btn_out.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btn_out.ForeColor = SystemColors.ControlLightLight;
@@ -148,16 +158,18 @@
             btn_out.Size = new Size(91, 41);
             btn_out.TabIndex = 9;
             btn_out.Text = "Log Out";
+            btn_out.TextAlign = ContentAlignment.TopCenter;
             btn_out.UseVisualStyleBackColor = false;
             btn_out.Click += btn_out_Click;
             // 
             // btn_exit
             // 
+            btn_exit.Anchor = AnchorStyles.None;
             btn_exit.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             btn_exit.BackColor = Color.Red;
             btn_exit.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btn_exit.ForeColor = SystemColors.ControlLightLight;
-            btn_exit.Location = new Point(710, 319);
+            btn_exit.Location = new Point(710, 322);
             btn_exit.Name = "btn_exit";
             btn_exit.Size = new Size(91, 41);
             btn_exit.TabIndex = 10;
